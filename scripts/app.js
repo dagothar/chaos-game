@@ -81,7 +81,7 @@ var App = (function() {
   App.prototype._removePoint = function(point) {
     var self = this;
     
-    var idx = this._points.findIndex(function(p) { return p.key == point; })
+    var idx = this._points.findIndex(function(p) { return p.key == point.key; })
     this._points.splice(idx, 1);
     this._hashPoints();
   }
@@ -319,7 +319,7 @@ var App = (function() {
    * @brief Callback for mouseout event.
    */
   App.prototype._mouseout = function(e) {
-    if (!this._isNewPoint) {
+    //if (!this._isNewPoint) {
       if (this._hovered) { this._hovered.hovered = false; }
       if (this._selected) { this._selected.selected = false; }
       
@@ -327,7 +327,7 @@ var App = (function() {
       
       this._hovered = null;
       this._selected = null;
-    }
+    //}
     
     this._painting = false;
 
