@@ -3,9 +3,22 @@
 var App = (function() {
   
   
-  function drawPoint(ctx, point, color) {
-    ctx.fillStyle = 'black';
-    ctx.fillRect(point.x, point.y, 1, 1);
+  function drawPoint(ctx, point, size, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+      ctx.arc(point.x, point.y, size/2.0, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  
+  function Point(x, y) {
+    this.x = x;
+    this.y = y;
+    this.selected = false;
+    this.hovered = false;
   }
   
   
@@ -13,15 +26,18 @@ var App = (function() {
     this._updateTimer   = undefined;
     this._running       = false;
     this._points        = [
-      { x: 100, y: 100 },
-      { x: 700, y: 100 },
-      { x: 400, y: 500 }
+      new Point(100, 100),
+      new Point(700, 100),
+      new Point(400, 500)
     ];
-    this._game          = undefined;
     this._view          = undefined;
     this._pointsLayer   = undefined;
     this._gameLayer     = undefined;
     this._speed         = 1;
+    this._dotSize       = 2;
+    this._stepSize      = 0.5;
+    
+    this._game = new Chaos({x: 0, y: 0}, this._points, 0.5);
   };
   
   
@@ -36,30 +52,52 @@ var App = (function() {
     this._pointsLayer = new Concrete.Layer();
     this._gameLayer = new Concrete.Layer();
     this._view.add(this._pointsLayer).add(this._gameLayer);
-    console.log(this._gameLayer);
     
     
     $('.button-start').show();
     $('.button-stop').hide();
     $('.slider-speed').val(100);
+    $('.parameter-dot-size').val(2);
+    $('.slider-step').val(50);
     
-    $('.button-reset').click(function() { self._reset(); });
+    $('.button-reset').click(function() { self._clear(); });
     $('.button-start').click(function() { self._start(); });
     $('.button-stop').click(function() { self._stop(); });
     $('.button-step').click(function() { self._step(); });
+    $('.button-download').click(function() { self._download(); });
     $('.slider-speed').on('input change', function() { self._changeSpeed($(this).val()); });
+    $('.parameter').on('input change', function() { self._updateParameters(); });
   }
   
   
   App.prototype._updateUi = function() {
     /* update speed indicator */
     $('.speed').text((1.0/this._speed).toFixed(2) + 'x');
+    
+    /* update step size */
+    $('.step-size').text(this._stepSize.toFixed(2));
   }
   
   
-  App.prototype._reset = function() {
+  App.prototype._updateParameters = function() {
+    /* update dot size */
+    this._dotSize = parseFloat($('.parameter-dot-size').val());
+    console.log('!');
+    if (this._dotSize < 1) $('.parameter-dot-size').val(1);
+    if (this._dotSize > 10) $('.parameter-dot-size').val(10);
+    
+    /* update step size */
+    this._stepSize = 0.01 * parseFloat($('.slider-step').val());
+    this._game.setStepSize(this._stepSize);
+    
+    this._updateUi();
+  }
+  
+  
+  App.prototype._clear = function() {
     this._stop();
-    this._game = new Chaos({x: 0, y: 0}, this._points, 0.5);
+    //this._game = new Chaos({x: 0, y: 0}, this._points, 0.5);
+    this._gameLayer.scene.clear();
     
     this._updateUi();
   }
@@ -69,7 +107,8 @@ var App = (function() {
     var newPoint = this._game.update();
     
     if (newPoint) {
-      drawPoint(this._gameLayer.scene.context, newPoint, 'black');
+      console.log(this._dotSize);
+      drawPoint(this._gameLayer.scene.context, newPoint, this._dotSize, 'black');
     }
     
     this._updateUi();
@@ -89,7 +128,8 @@ var App = (function() {
   
   
   App.prototype._step = function() {
-    
+    this._test();
+    this._update();
   }
   
   
@@ -101,6 +141,11 @@ var App = (function() {
       this._running = false;
       clearInterval(this._updateTimer);
     }
+  }
+  
+  
+  App.prototype._download = function() {
+    this._view.toScene().download({ fileName: 'chaos.png' });
   }
   
   
@@ -117,7 +162,15 @@ var App = (function() {
 
   App.prototype.run = function() {
     this._bindUiActions();
-    this._reset();
+    this._clear();
+  }
+  
+  
+  App.prototype._test = function() {
+    var self = this;
+    this._points.forEach(function(point) {
+      drawPoint(self._pointsLayer.scene.context, point, 10, 'red');
+    });
   }
   
   

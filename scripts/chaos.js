@@ -17,6 +17,7 @@ var Chaos = (function() {
   Chaos.prototype.setPoints       = function(points)      { this._points = points; }
   Chaos.prototype.addPoint        = function(point)       { this._points.push(point); }
   Chaos.prototype.clearPoints     = function()            { this._points = []; }
+  Chaos.prototype.setStepSize     = function(stepSize)    { this._stepSize = stepSize; }
   
 
   /**

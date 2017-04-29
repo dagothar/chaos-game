@@ -49,16 +49,29 @@
             
             <!-- control buttons -->
             <div class="form-group">
-              <button type="button" class="button-reset btn btn-default btn-block">Reset <span class="glyphicon glyphicon-off"></span></button>
-              <button type="button" class="button-step btn btn-default btn-block">Step <span class="glyphicon glyphicon-step-forward"></span></button>
               <button type="button" class="button-start btn btn-default btn-block">Start <span class="glyphicon glyphicon-play"></span></button>
               <button type="button" class="button-stop btn btn-default btn-block">Pause <span class="glyphicon glyphicon-pause"></span></button>
+              <button type="button" class="button-step btn btn-default btn-block">Step <span class="glyphicon glyphicon-step-forward"></span></button>
+              <button type="button" class="button-reset btn btn-default btn-block">Clear <span class="glyphicon glyphicon-erase"></span></button>
+              <button type="button" class="button-download btn btn-default btn-block">Save image <span class="glyphicon glyphicon-download"></span></button>
             </div>
             
             <!-- speed slider -->
             <div class="form-group">
               <label>Speed:</label> <span class="speed pull-right">0</span>
               <input type="range" min="0" val="100" max="100" class="slider-speed"/>
+            </div>
+            
+            <!-- dot size -->
+            <div class="form-group">
+              <label>Dot size:</label>
+              <input type="number" class="parameter parameter-dot-size" min="0" max="10" value="1" step="1">
+            </div>
+            
+            <!-- step size -->
+            <div class="form-group">
+              <label>Step size:</label> <span class="step-size pull-right">0</span>
+              <input type="range" min="0" val="50" max="100" class="parameter slider-step"/>
             </div>
             
           </div>
@@ -78,6 +91,7 @@
   
   
   <!-- scripts -->
+  <script src="vendor/underscore/underscore.min.js"></script>
   <script src="vendor/jquery/jquery-3.2.0.min.js"></script>
   <script src="vendor/concrete/concrete.min.js"></script>
   <script src="scripts/chaos.js"></script>
