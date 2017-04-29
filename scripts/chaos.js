@@ -3,15 +3,6 @@
 var Chaos = (function() {
   
   /**
-   * @brief Point class constructor.
-   */
-  function Point(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-  
-  
-  /**
    * @brief Chaos class constructor.
    */
   function Chaos(startPoint, points, stepSize) {
@@ -33,12 +24,13 @@ var Chaos = (function() {
    */
   Chaos.prototype.update = function(context) {
     /* pick the new target */
+    if (this._points.length == 0) return false;
     var target = this._points[Math.floor(Math.random() * this._points.length)];
     
     /* calculate new position */
-    var x = (1.0-this._stepSize) * _current.x + this._stepSize * target.x;
-    var y = (1.0-this._stepSize) * _current.y + this._stepSize * target.y;
-    this._current = new Point(x, y);
+    var x = (1.0-this._stepSize) * this._current.x + this._stepSize * target.x;
+    var y = (1.0-this._stepSize) * this._current.y + this._stepSize * target.y;
+    this._current = {x: x, y: y};
     
     return this._current;
   }
