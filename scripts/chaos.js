@@ -26,8 +26,10 @@ var Chaos = (function() {
   Chaos.prototype.update = function(context) {
     /* pick the new target */
     if (this._points.length == 0) return false;
-    var target = this._points[Math.floor(Math.random() * this._points.length)];
-    if (target === undefined) return null;
+    
+    var idx = Math.floor(Math.random() * this._points.length);
+    var target = this._points[idx];
+    if (!target) return null;
     
     /* calculate new position */
     var x = (1.0-this._stepSize) * this._current.x + this._stepSize * target.x;

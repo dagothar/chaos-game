@@ -40,8 +40,9 @@ var App = (function() {
       new Point(700, 100),
       new Point(400, 500)
     ];
+    this._pointsHash = [];
     this._points.forEach(function(p) {
-      self._points[p.key] = p;
+      self._pointsHash[p.key] = p;
     });
     this._hovered = null;
     this._selected = null;
@@ -56,7 +57,7 @@ var App = (function() {
     this._gameLayer = new Concrete.Layer();
     this._view.add(this._pointsLayer).add(this._gameLayer);
     
-    this._speed         = 1;
+    this._speed         = 10;
     this._dotSize       = 3;
     this._stepSize      = 0.5;
     
@@ -81,32 +82,16 @@ var App = (function() {
     $('.slider-speed').on('input change', function() { self._changeSpeed($(this).val()); });
     $('.parameter').on('input change', function() { self._updateParameters(); });
     
-    /* select points */
-    $('#view').mousemove(_.throttle(function(e) {
-      var boundingRect = self._viewContainer.getBoundingClientRect();
-      var x = Math.floor(e.clientX - boundingRect.left);
-      var y = Math.floor(e.clientY - boundingRect.top);
-      
-      if (self._selected) {
-        self._selected.x = x;
-        self._selected.y = y;
-      } else {
-        var key = self._view.getIntersection(x, y);
-        
-        self._points.forEach(function(point) {
-          point.hovered = false;
-        });
-        
-        if (key) {
-          self._points[key].hovered = true;
-          self._hovered = self._points[key];
-        } else {
-          self._hovered = null;
-        }
-      }
-      
+    /* control points */
+    $('#view').mousemove(_.throttle(function(e) { self._mousemove(e); }, 10));
+    
+    $('#view').mouseout(function(e) {
+      if (self._hovered) { self._hovered.hovered = false; }
+      if (self._selected) { self._selected.selected = false; }
+      self._hovered = null;
+      self._selected = null;
       self._updateControlPoints();
-    }, 10));
+    });
     
     $('#view').mousedown(function(e) {
       self._selected = self._hovered;
@@ -117,13 +102,13 @@ var App = (function() {
     });
     
     this._updateUi();
-    this._updateControlPoints
+    this._updateControlPoints();
   }
   
   
   App.prototype._updateUi = function() {
     /* update speed indicator */
-    $('.speed').text((1.0/this._speed).toFixed(2) + 'x');
+    $('.speed').text((10.0/this._speed).toFixed(3) + 'x');
     
     /* update step size */
     $('.step-size').text(this._stepSize.toFixed(2));
@@ -151,9 +136,11 @@ var App = (function() {
   
   App.prototype._update = function() {
     var newPoint = this._game.update();
+    this._updateControlPoints();
     
     if (newPoint) {
       drawDot(this._gameLayer.scene.context, newPoint, this._dotSize, 'black');
+      drawDot(this._pointsLayer.scene.context, newPoint, 10, 'green');
     }
     
     this._updateUi();
@@ -172,10 +159,10 @@ var App = (function() {
   }
   
   
-  App.prototype._step = function() {
+  /*App.prototype._step = function() {
     this._updateControlPoints();
     this._update();
-  }
+  }*/
   
   
   App.prototype._stop = function() {
@@ -189,25 +176,23 @@ var App = (function() {
   }
   
   
+  /**
+   * @brief Download button callback.
+   */
   App.prototype._download = function() {
     this._view.toScene().download({ fileName: 'chaos.png' });
   }
   
   
   App.prototype._changeSpeed = function(val) {
-    this._speed = 100 * Math.pow(1.047129, -val);
+    this._speed = 1000 * Math.pow(1.047129, -val);
+    //console.log(this._speed);
     if (this._running) {
       clearInterval(this._updateTimer);
       var self = this;
       this._updateTimer = setInterval(function() { self._update(); }, this._speed);
     } 
     this._updateUi();
-  }
-  
-
-  App.prototype.run = function() {
-    this._bindUiActions();
-    this._clear();
   }
   
   
@@ -224,6 +209,39 @@ var App = (function() {
       drawDot(hit.context, point, 10, hit.getColorFromKey(point.key));
       drawDot(scene.context, point, 10, point.hovered ? 'yellow' : 'red');
     });
+  }
+  
+  
+  App.prototype._mousemove = function(e) {
+    var boundingRect = this._viewContainer.getBoundingClientRect();
+    var x = Math.floor(e.clientX - boundingRect.left);
+    var y = Math.floor(e.clientY - boundingRect.top);
+    
+    if (this._selected) {
+      this._selected.x = x;
+      this._selected.y = y;
+    } else {
+      var key = this._view.getIntersection(x, y);
+      
+      this._points.forEach(function(point) {
+        point.hovered = false;
+      });
+      
+      if (key) {
+        this._pointsHash[key].hovered = true;
+        this._hovered = this._pointsHash[key];
+      } else {
+        this._hovered = null;
+      }
+    }
+    
+    this._updateControlPoints();
+  }
+  
+  
+  App.prototype.run = function() {
+    this._bindUiActions();
+    this._clear();
   }
   
   
