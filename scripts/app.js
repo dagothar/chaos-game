@@ -41,11 +41,11 @@ var App = (function() {
       new Point(400, 500)
     ];
     this._pointsHash = [];
-    this._points.forEach(function(p) {
-      self._pointsHash[p.key] = p;
-    });
+    this._hashPoints();
     this._hovered = null;
     this._selected = null;
+    this._newPoint = false;
+    this._mouseUp = false;
     
     this._viewContainer = $('#view').get(0);
     this._view = new Concrete.Viewport({
@@ -63,6 +63,25 @@ var App = (function() {
     
     this._game = new Chaos({x: 400, y: 300}, this._points, this._stepSize);
   };
+  
+  
+  App.prototype._hashPoints = function() {
+    var self = this;
+    
+    this._pointsHash = [];
+    this._points.forEach(function(p) {
+      self._pointsHash[p.key] = p;
+    });
+  }
+  
+  
+  App.prototype._removePoint = function(point) {
+    var self = this;
+    
+    var idx = this._points.findIndex(function(p) { return p.key == self._selected.key; })
+    this._points.splice(idx, 1);
+    this._hashPoints();
+  }
   
   
   App.prototype._bindUiActions = function() {
@@ -86,19 +105,46 @@ var App = (function() {
     $('#view').mousemove(_.throttle(function(e) { self._mousemove(e); }, 10));
     
     $('#view').mouseout(function(e) {
-      if (self._hovered) { self._hovered.hovered = false; }
-      if (self._selected) { self._selected.selected = false; }
-      self._hovered = null;
-      self._selected = null;
+      if (!self._newPoint) {
+        if (self._hovered) { self._hovered.hovered = false; }
+        if (self._selected) { self._selected.selected = false; }
+        
+        if (self._selected) self._removePoint(self._selected);
+        
+        self._hovered = null;
+        self._selected = null;
+      }
+
       self._updateControlPoints();
     });
     
     $('#view').mousedown(function(e) {
+      self._mouseUp = false;
       self._selected = self._hovered;
     });
     
+    $('body').mouseup(function(e) {
+      self._mouseUp = true;
+    });
+    
     $('#view').mouseup(function(e) {
+      self._mouseUp = true;
       self._selected = null;
+      self._newPoint = false;
+    });
+    
+    $('.new-point').mousedown(function(e) {
+      var newPoint = new Point(0, 0);
+      self._points.push(newPoint);
+      self._points.forEach(function(p) {
+        self._pointsHash[p.key] = p;
+      });
+      
+      self._newPoint = true;
+      newPoint.hovered = true;
+      newPoint.selected = true;
+      self._hovered = newPoint;
+      self._selected = newPoint;
     });
     
     this._updateUi();
@@ -212,10 +258,15 @@ var App = (function() {
   }
   
   
+  /**
+   * @brief Callback for mouse movement in the viewport.
+   */
   App.prototype._mousemove = function(e) {
     var boundingRect = this._viewContainer.getBoundingClientRect();
     var x = Math.floor(e.clientX - boundingRect.left);
     var y = Math.floor(e.clientY - boundingRect.top);
+    
+    //console.log(x, y);
     
     if (this._selected) {
       this._selected.x = x;
