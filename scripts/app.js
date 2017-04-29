@@ -44,7 +44,7 @@ var App = (function() {
     this._hashPoints();
     this._hovered = null;
     this._selected = null;
-    this._newPoint = false;
+    this._isNewPoint = false;
     this._currentPoint = new Point(400, 300);
     
     this._viewContainer = $('#view').get(0);
@@ -58,7 +58,7 @@ var App = (function() {
     this._view.add(this._pointsLayer).add(this._gameLayer);
     
     this._speed         = 10;
-    this._dotSize       = 3;
+    this._dotSize       = 5;
     this._stepSize      = 0.5;
     this._dotColor      = '#000000';
     
@@ -79,7 +79,7 @@ var App = (function() {
   App.prototype._removePoint = function(point) {
     var self = this;
     
-    var idx = this._points.findIndex(function(p) { return p.key == self._selected.key; })
+    var idx = this._points.findIndex(function(p) { return p.key == point; })
     this._points.splice(idx, 1);
     this._hashPoints();
   }
@@ -106,44 +106,11 @@ var App = (function() {
     
     /* control points */
     $('#view').mousemove(_.throttle(function(e) { self._mousemove(e); }, 10));
-    
-    $('#view').mouseout(function(e) {
-      if (!self._newPoint) {
-        if (self._hovered) { self._hovered.hovered = false; }
-        if (self._selected) { self._selected.selected = false; }
-        
-        if (self._selected) self._removePoint(self._selected);
-        
-        self._hovered = null;
-        self._selected = null;
-      }
-
-      self._updateControlPoints();
-    });
-    
-    $('#view').mousedown(function(e) {
-      self._mouseUp = false;
-      self._selected = self._hovered;
-    });
-    
-    $('#view').mouseup(function(e) {      
-      self._selected = null;
-      self._newPoint = false;
-    });
-    
-    $('.new-point').mousedown(function(e) {
-      var newPoint = new Point(0, 0);
-      self._points.push(newPoint);
-      self._points.forEach(function(p) {
-        self._pointsHash[p.key] = p;
-      });
-      
-      self._newPoint = true;
-      newPoint.hovered = true;
-      newPoint.selected = true;
-      self._hovered = newPoint;
-      self._selected = newPoint;
-    });
+    $('#view').mouseout(function() { self._mouseout(); });
+    $('#view').mousedown(function() { self._mousedown(); });
+    $('#view').mouseup(function() { self._mouseup(); });
+    $('.button-add').click(function() { self._newPoint(); });
+    $('.button-remove').click(function() { self._clearPoints(); });
     
     this._updateUi();
     this._updateControlPoints();
@@ -156,6 +123,10 @@ var App = (function() {
     
     /* update step size */
     $('.step-size').text(this._stepSize.toFixed(2));
+    
+    /* update current point position */
+    $('.point-x').text(this._currentPoint.x.toFixed(0));
+    $('.point-y').text(this._currentPoint.y.toFixed(0));
   }
   
   
@@ -249,13 +220,13 @@ var App = (function() {
     
     scene.clear();
     hit.clear();
+    
+    drawDot(scene.context, this._currentPoint, 10, 'green');
 
     this._points.forEach(function(point) {
       drawDot(hit.context, point, 10, hit.getColorFromKey(point.key));
       drawDot(scene.context, point, 10, point.hovered ? 'yellow' : 'red');
     });
-    
-    drawDot(scene.context, this._currentPoint, 10, 'green');
   }
   
   
@@ -287,6 +258,66 @@ var App = (function() {
       }
     }
     
+    this._updateControlPoints();
+  }
+  
+  
+  /**
+   * @brief Callback for mouseout event.
+   */
+  App.prototype._mouseout = function(e) {
+    if (!this._isNewPoint) {
+      if (this._hovered) { this._hovered.hovered = false; }
+      if (this._selected) { this._selected.selected = false; }
+      
+      if (this._selected) this._removePoint(this._selected);
+      
+      this._hovered = null;
+      this._selected = null;
+    }
+
+    this._updateControlPoints();
+  }
+  
+  
+  /**
+   * @brief Callback for mousedown event.
+   */
+  App.prototype._mousedown = function() {
+    this._selected = this._hovered;
+  }
+  
+  
+  /**
+   * @brief Callback for mouseup event.
+   */
+  App.prototype._mouseup = function() {
+    this._selected = null;
+    this._isNewPoint = false;
+  }
+  
+  
+  /**
+   * @brief Callback for new point event.
+   */
+  App.prototype._newPoint = function() {
+    var newPoint = new Point(400, 300);
+    this._points.push(newPoint);
+    this._hashPoints();
+    
+    /*this._isNewPoint = true;
+    newPoint.hovered = true;
+    newPoint.selected = true;
+    this._hovered = newPoint;
+    this._selected = newPoint;*/
+  }
+  
+  
+  /**
+   * @brief Removes all control points.
+   */
+  App.prototype._clearPoints = function() {
+    this._points.splice(0, this._points.length);
     this._updateControlPoints();
   }
   

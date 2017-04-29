@@ -25,11 +25,16 @@
       <!-- POINTS -->
       <div class="col-md-2 col-md-offset-1">
         <div class="panel panel-default">
-          <div class="panel-heading">Points</div>
+          <div class="panel-heading">Control points</div>
           <div class="panel-body">
-            
-            <p class=""><strong>Drag this to add new point: </strong><span class="pull-right glyphicon glyphicon-pushpin new-point"></span></p>
-            
+            <p><strong>Current dot:</strong></p>
+            <p>x <span class="pull-right text-danger point-x">0</span></p>
+            <p>y <span class="pull-right text-success point-y">0</span></p>
+
+            <div class="form-group">
+              <button type="button" class="button-add btn btn-default btn-block">Add new point <span class="glyphicon glyphicon-pushpin new-point"></span></button>
+              <button type="button" class="button-remove btn btn-default btn-block">Remove all points</button>
+            </div>
           </div>
         </div>
       </div>
