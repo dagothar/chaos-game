@@ -44,7 +44,6 @@ var App = (function() {
     this._hashPoints();
     this._hovered = null;
     this._selected = null;
-    this._isNewPoint = false;
     this._currentPoint = new Point(400, 300);
     
     this._viewContainer = $('#view').get(0);
@@ -53,16 +52,22 @@ var App = (function() {
       width: 800,
       height: 600
     });
-    this._pointsLayer = new Concrete.Layer();
-    this._gameLayer = new Concrete.Layer();
-    this._view.add(this._pointsLayer).add(this._gameLayer);
+    this._pointsLayer = new Concrete.Layer(); this._pointsLayer.setSize(800, 600);
+    this._gameLayer = new Concrete.Layer(); this._gameLayer.setSize(800, 600);
+    this._paintLayer = new Concrete.Layer(); this._paintLayer.setSize(800, 600);
+    this._view.add(this._paintLayer).add(this._pointsLayer).add(this._gameLayer);
     
     this._speed         = 10;
     this._dotSize       = 5;
     this._stepSize      = 0.5;
     this._dotColor      = '#000000';
+    this._brushSize     = 10;
+    this._painting      = false;
+    this._paintColor    = '#0000ff';
+    this._brushSize     = 5;
+    this._dotsPerStep   = 1;
     
-    this._game = new Chaos({x: 400, y: 300}, this._points, this._stepSize);
+    this._game = new Chaos({x: 400, y: 300}, this._points, this._stepSize, function(x, y) { return self._testDotPosition(x, y); });
   };
   
   
@@ -93,7 +98,9 @@ var App = (function() {
     $('.slider-speed').val(100);
     $('.parameter-dot-size').val(this._dotSize);
     $('.slider-step').val(50);
-    $('input[name=dot-color]').val('#000000');
+    $('.slider-brush').val(5);
+    $('input[name=dot-color]').val(this._dotColor);
+    $('input[name=paint-color]').val(this._paintColor);
     
     $('.button-reset').click(function() { self._clear(); });
     $('.button-start').click(function() { self._start(); });
@@ -103,9 +110,12 @@ var App = (function() {
     $('.slider-speed').on('input change', function() { self._changeSpeed($(this).val()); });
     $('.parameter').on('input change', function() { self._updateParameters(); });
     $('input[name=dot-color]').change(function() { self._dotColor = $(this).val(); });
+    $('.slider-brush').on('input change', function() { self._brushSize = parseFloat($(this).val()); });
+    $('input[name=paint-color]').change(function() { self._paintColor = $(this).val(); });
+    $('.button-clear').click(function() { self._clearPaint(); });
     
     /* control points */
-    $('#view').mousemove(_.throttle(function(e) { self._mousemove(e); }, 10));
+    $('#view').mousemove(_.throttle(function(e) { self._mousemove(e); }, 1));
     $('#view').mouseout(function() { self._mouseout(); });
     $('#view').mousedown(function() { self._mousedown(); });
     $('#view').mouseup(function() { self._mouseup(); });
@@ -127,6 +137,9 @@ var App = (function() {
     /* update current point position */
     $('.point-x').text(this._currentPoint.x.toFixed(0));
     $('.point-y').text(this._currentPoint.y.toFixed(0));
+    
+    /* update brush size */
+    $('.brush-size').text(this._brushSize.toFixed(0));
   }
   
   
@@ -138,7 +151,7 @@ var App = (function() {
     
     /* update step size */
     this._stepSize = 0.01 * parseFloat($('.slider-step').val());
-    this._game.setStepSize(this._stepSize);
+    this._game.setStepSize(this._stepSize);    
     
     this._updateUi();
   }
@@ -150,12 +163,13 @@ var App = (function() {
   
   
   App.prototype._update = function() {
-    var newPoint = this._game.update();
-    this._updateControlPoints();
     
-    if (newPoint) {
-      drawDot(this._gameLayer.scene.context, newPoint, this._dotSize, this._dotColor);
-      this._currentPoint = newPoint;
+    for (var i = 0; i < this._dotsPerStep; ++i) {
+      var newPoint = this._game.update();
+      if (newPoint) {
+        drawDot(this._gameLayer.scene.context, newPoint, this._dotSize, this._dotColor);
+        this._currentPoint = newPoint;
+      }
     }
     
     this._updateUi();
@@ -225,7 +239,12 @@ var App = (function() {
 
     this._points.forEach(function(point) {
       drawDot(hit.context, point, 10, hit.getColorFromKey(point.key));
-      drawDot(scene.context, point, 10, point.hovered ? 'yellow' : 'red');
+      if (point.hovered) {
+        drawDot(scene.context, point, 12, 'black');
+        drawDot(scene.context, point, 9, 'red');
+      } else {
+        drawDot(scene.context, point, 10, 'red');
+      }
     });
   }
   
@@ -239,6 +258,10 @@ var App = (function() {
     var y = Math.floor(e.clientY - boundingRect.top);
     
     //console.log(x, y);
+    //var ctx = this._paintLayer.scene.context;
+    //console.log(ctx.getImageData(0, 0, 100, 100).data);
+    //var color = ctx.getImageData(Math.floor(2*x), Math.floor(2*y), 1, 1).data;
+    //console.log(x, y, color, this._paintLayer.scene.canvas.width, this._paintLayer.scene.canvas.height);
     
     if (this._selected) {
       this._selected.x = x;
@@ -255,6 +278,8 @@ var App = (function() {
         this._hovered = this._pointsHash[key];
       } else {
         this._hovered = null;
+        
+        if (this._painting) this._paint(x, y);
       }
     }
     
@@ -275,6 +300,8 @@ var App = (function() {
       this._hovered = null;
       this._selected = null;
     }
+    
+    this._painting = false;
 
     this._updateControlPoints();
   }
@@ -285,6 +312,10 @@ var App = (function() {
    */
   App.prototype._mousedown = function() {
     this._selected = this._hovered;
+    
+    if (!this._selected) {
+      this._painting = true;
+    }
   }
   
   
@@ -293,7 +324,8 @@ var App = (function() {
    */
   App.prototype._mouseup = function() {
     this._selected = null;
-    this._isNewPoint = false;
+    //this._isNewPoint = false;
+    this._painting = false;
   }
   
   
@@ -319,6 +351,42 @@ var App = (function() {
   App.prototype._clearPoints = function() {
     this._points.splice(0, this._points.length);
     this._updateControlPoints();
+  }
+  
+  
+  /**
+   * @brief Paints a brush shape.
+   */
+  App.prototype._paint = function(x, y) {
+    var self = this;
+    var ctx = this._paintLayer.scene.context;
+    
+    ctx.save();
+    ctx.fillStyle = this._paintColor;
+    ctx.beginPath();
+      ctx.arc(x, y, this._brushSize, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    
+    this._game.setTestFunction(function(x, y) { return self._testDotPosition(x, y); });
+  }
+  
+  
+  App.prototype._clearPaint = function() {
+    this._paintLayer.scene.clear();
+  }
+  
+  
+  /**
+   * @brief Tests whether the new dot location is allowed.
+   */
+  App.prototype._testDotPosition = function(x, y) {
+    var ctx = this._paintLayer.scene.context;
+    //console.log(ctx.getImageData(0, 0, 100, 100).data);
+    var color = ctx.getImageData(Math.floor(2*x), Math.floor(2*y), 1, 1).data;
+    console.log(color, _.difference(color, [0, 0, 0, 0]).length == 0);
+    return (_.difference(color, [0, 0, 0, 0]).length == 0) ;
   }
   
   
