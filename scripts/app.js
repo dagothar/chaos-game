@@ -3,9 +3,11 @@
 var App = (function() {
   
   
-  function drawPoint(ctx, point, size, color) {
+  function drawDot(ctx, point, size, color) {
     ctx.save();
+    
     ctx.fillStyle = color;
+    
     ctx.beginPath();
       ctx.arc(point.x, point.y, size/2.0, 0, Math.PI * 2);
     ctx.closePath();
@@ -13,39 +15,40 @@ var App = (function() {
     ctx.restore();
   }
   
+  var POINT_ID = 10;
   
   function Point(x, y) {
     this.x = x;
     this.y = y;
     this.selected = false;
     this.hovered = false;
+    this.key = ++POINT_ID;
   }
   
   
+  /**
+   * @brief App class constructor.
+   */
   function App() {
+    var self = this;
+    
     this._updateTimer   = undefined;
     this._running       = false;
+    
     this._points        = [
       new Point(100, 100),
       new Point(700, 100),
       new Point(400, 500)
     ];
-    this._view          = undefined;
-    this._pointsLayer   = undefined;
-    this._gameLayer     = undefined;
-    this._speed         = 1;
-    this._dotSize       = 2;
-    this._stepSize      = 0.5;
+    this._points.forEach(function(p) {
+      self._points[p.key] = p;
+    });
+    this._hovered = null;
+    this._selected = null;
     
-    this._game = new Chaos({x: 0, y: 0}, this._points, 0.5);
-  };
-  
-  
-  App.prototype._bindUiActions = function() {
-    var self = this;
-    
+    this._viewContainer = $('#view').get(0);
     this._view = new Concrete.Viewport({
-      container: $('#view').get(0),
+      container: this._viewContainer,
       width: 800,
       height: 600
     });
@@ -53,11 +56,21 @@ var App = (function() {
     this._gameLayer = new Concrete.Layer();
     this._view.add(this._pointsLayer).add(this._gameLayer);
     
+    this._speed         = 1;
+    this._dotSize       = 3;
+    this._stepSize      = 0.5;
     
+    this._game = new Chaos({x: 400, y: 300}, this._points, this._stepSize);
+  };
+  
+  
+  App.prototype._bindUiActions = function() {
+    var self = this;
+
     $('.button-start').show();
     $('.button-stop').hide();
     $('.slider-speed').val(100);
-    $('.parameter-dot-size').val(2);
+    $('.parameter-dot-size').val(this._dotSize);
     $('.slider-step').val(50);
     
     $('.button-reset').click(function() { self._clear(); });
@@ -67,6 +80,44 @@ var App = (function() {
     $('.button-download').click(function() { self._download(); });
     $('.slider-speed').on('input change', function() { self._changeSpeed($(this).val()); });
     $('.parameter').on('input change', function() { self._updateParameters(); });
+    
+    /* select points */
+    $('#view').mousemove(_.throttle(function(e) {
+      var boundingRect = self._viewContainer.getBoundingClientRect();
+      var x = Math.floor(e.clientX - boundingRect.left);
+      var y = Math.floor(e.clientY - boundingRect.top);
+      
+      if (self._selected) {
+        self._selected.x = x;
+        self._selected.y = y;
+      } else {
+        var key = self._view.getIntersection(x, y);
+        
+        self._points.forEach(function(point) {
+          point.hovered = false;
+        });
+        
+        if (key) {
+          self._points[key].hovered = true;
+          self._hovered = self._points[key];
+        } else {
+          self._hovered = null;
+        }
+      }
+      
+      self._updateControlPoints();
+    }, 10));
+    
+    $('#view').mousedown(function(e) {
+      self._selected = self._hovered;
+    });
+    
+    $('#view').mouseup(function(e) {
+      self._selected = null;
+    });
+    
+    this._updateUi();
+    this._updateControlPoints
   }
   
   
@@ -82,7 +133,6 @@ var App = (function() {
   App.prototype._updateParameters = function() {
     /* update dot size */
     this._dotSize = parseFloat($('.parameter-dot-size').val());
-    console.log('!');
     if (this._dotSize < 1) $('.parameter-dot-size').val(1);
     if (this._dotSize > 10) $('.parameter-dot-size').val(10);
     
@@ -95,11 +145,7 @@ var App = (function() {
   
   
   App.prototype._clear = function() {
-    this._stop();
-    //this._game = new Chaos({x: 0, y: 0}, this._points, 0.5);
     this._gameLayer.scene.clear();
-    
-    this._updateUi();
   }
   
   
@@ -107,8 +153,7 @@ var App = (function() {
     var newPoint = this._game.update();
     
     if (newPoint) {
-      console.log(this._dotSize);
-      drawPoint(this._gameLayer.scene.context, newPoint, this._dotSize, 'black');
+      drawDot(this._gameLayer.scene.context, newPoint, this._dotSize, 'black');
     }
     
     this._updateUi();
@@ -128,7 +173,7 @@ var App = (function() {
   
   
   App.prototype._step = function() {
-    this._test();
+    this._updateControlPoints();
     this._update();
   }
   
@@ -150,7 +195,7 @@ var App = (function() {
   
   
   App.prototype._changeSpeed = function(val) {
-    this._speed = 100 * Math.pow(1.0471285480508995334645, -val);
+    this._speed = 100 * Math.pow(1.047129, -val);
     if (this._running) {
       clearInterval(this._updateTimer);
       var self = this;
@@ -166,10 +211,18 @@ var App = (function() {
   }
   
   
-  App.prototype._test = function() {
+  App.prototype._updateControlPoints = function() {
     var self = this;
+    
+    var scene = this._pointsLayer.scene;
+    var hit = this._pointsLayer.hit;
+    
+    scene.clear();
+    hit.clear();
+
     this._points.forEach(function(point) {
-      drawPoint(self._pointsLayer.scene.context, point, 10, 'red');
+      drawDot(hit.context, point, 10, hit.getColorFromKey(point.key));
+      drawDot(scene.context, point, 10, point.hovered ? 'yellow' : 'red');
     });
   }
   
