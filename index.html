@@ -28,10 +28,23 @@
           <div class="panel-heading">Control points</div>
           
           <div class="panel-body">
+            <p><strong>Dots: </strong><span class="pull-right dots"></span></p>
             <p><strong>Current dot:</strong><span class="pull-right">(<span class="text-danger point-x">0</span>, <span class="text-success point-y">0</span>)</span></p>
 
             <div class="form-group">
               <button type="button" class="button-add btn btn-default btn-block">Add new point <span class="glyphicon glyphicon-pushpin new-point"></span></button>
+            </div>
+            
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button class="btn btn-default button-ngon" type="button">Make n-gon</button>
+              </span>
+              <input type="number" class="form-control" name="ngon" min="1" val="3">
+            </div>
+            
+            <br/>
+
+            <div class="form-group">
               <button type="button" class="button-remove btn btn-default btn-block">Remove all points</button>
               
               <!-- brush size -->
@@ -40,7 +53,7 @@
               
               <!-- paint color -->
               <label>Paint color:</label>
-              <input type="color" name="paint-color" value="#00ff00"/>
+              <input type="color" name="paint-color" value="#0000ff"/>
             </div>
             
             <div class="form-group">

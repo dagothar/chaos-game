@@ -35,16 +35,12 @@ var App = (function() {
     this._updateTimer   = undefined;
     this._running       = false;
     
-    this._points        = [
-      new Point(100, 100),
-      new Point(700, 100),
-      new Point(400, 500)
-    ];
-    this._pointsHash = [];
+    this._points        = [];
+    this._pointsHash    = [];
     this._hashPoints();
-    this._hovered = null;
-    this._selected = null;
-    this._currentPoint = new Point(400, 300);
+    this._hovered       = null;
+    this._selected      = null;
+    this._currentPoint  = new Point(400, 300);
     
     this._viewContainer = $('#view').get(0);
     this._view = new Concrete.Viewport({
@@ -55,8 +51,9 @@ var App = (function() {
     this._pointsLayer = new Concrete.Layer(); this._pointsLayer.setSize(800, 600);
     this._gameLayer = new Concrete.Layer(); this._gameLayer.setSize(800, 600);
     this._paintLayer = new Concrete.Layer(); this._paintLayer.setSize(800, 600);
-    this._view.add(this._paintLayer).add(this._pointsLayer).add(this._gameLayer);
+    this._view.add(this._paintLayer).add(this._gameLayer).add(this._pointsLayer);
     
+    this._dots          = 0;
     this._speed         = 10;
     this._dotSize       = 5;
     this._stepSize      = 0.5;
@@ -64,7 +61,7 @@ var App = (function() {
     this._brushSize     = 10;
     this._painting      = false;
     this._paintColor    = '#0000ff';
-    this._brushSize     = 5;
+    this._brushSize     = 10;
     this._dotsPerStep   = 1;
     
     this._game = new Chaos({x: 400, y: 300}, this._points, this._stepSize, function(x, y) { return self._testDotPosition(x, y); });
@@ -90,6 +87,16 @@ var App = (function() {
   }
   
   
+  /**
+   * @brief Adds a new control point.
+   */
+  App.prototype._addPoint = function(x, y) {
+    var newPoint = new Point(x, y);
+    this._points.push(newPoint);
+    this._hashPoints();
+  }
+  
+  
   App.prototype._bindUiActions = function() {
     var self = this;
 
@@ -98,7 +105,8 @@ var App = (function() {
     $('.slider-speed').val(100);
     $('.parameter-dot-size').val(this._dotSize);
     $('.slider-step').val(50);
-    $('.slider-brush').val(5);
+    $('.slider-brush').val(10);
+    $('input[name=ngon]').val(3);
     $('input[name=dot-color]').val(this._dotColor);
     $('input[name=paint-color]').val(this._paintColor);
     
@@ -113,13 +121,14 @@ var App = (function() {
     $('.slider-brush').on('input change', function() { self._brushSize = parseFloat($(this).val()); });
     $('input[name=paint-color]').change(function() { self._paintColor = $(this).val(); });
     $('.button-clear').click(function() { self._clearPaint(); });
+    $('.button-ngon').click(function() { self._initialize(250, parseInt($('input[name=ngon]').val())); });
     
     /* control points */
     $('#view').mousemove(_.throttle(function(e) { self._mousemove(e); }, 1));
     $('#view').mouseout(function() { self._mouseout(); });
     $('#view').mousedown(function() { self._mousedown(); });
     $('#view').mouseup(function() { self._mouseup(); });
-    $('.button-add').click(function() { self._newPoint(); });
+    $('.button-add').click(function() { self._addPoint(400, 300); });
     $('.button-remove').click(function() { self._clearPoints(); });
     
     this._updateUi();
@@ -140,6 +149,9 @@ var App = (function() {
     
     /* update brush size */
     $('.brush-size').text(this._brushSize.toFixed(0));
+    
+    /* update no of dots */
+    $('.dots').text(this._dots);
   }
   
   
@@ -151,14 +163,28 @@ var App = (function() {
     
     /* update step size */
     this._stepSize = 0.01 * parseFloat($('.slider-step').val());
-    this._game.setStepSize(this._stepSize);    
+    this._game.setStepSize(this._stepSize);  
     
     this._updateUi();
   }
   
   
+  App.prototype._initialize = function(size, n) {
+    this._clearPoints();
+    
+    for (var i = 0; i < 2*Math.PI; i += 2*Math.PI/n) {
+      this._addPoint(400+size*Math.sin(i-Math.PI/n), 300+size*Math.cos(i-Math.PI/n));
+    }
+    
+    this._currentPoint = new Point(400, 300);
+    this._updateControlPoints();
+  }
+  
+  
   App.prototype._clear = function() {
     this._gameLayer.scene.clear();
+    this._dots = 0;
+    this._updateUi();
   }
   
   
@@ -169,6 +195,7 @@ var App = (function() {
       if (newPoint) {
         drawDot(this._gameLayer.scene.context, newPoint, this._dotSize, this._dotColor);
         this._currentPoint = newPoint;
+        ++this._dots;
       }
     }
     
@@ -235,7 +262,8 @@ var App = (function() {
     scene.clear();
     hit.clear();
     
-    drawDot(scene.context, this._currentPoint, 10, 'green');
+    drawDot(scene.context, this._currentPoint, this._dotSize+3, this._dotColor);
+    drawDot(scene.context, this._currentPoint, this._dotSize, 'white');
 
     this._points.forEach(function(point) {
       drawDot(hit.context, point, 10, hit.getColorFromKey(point.key));
@@ -330,22 +358,6 @@ var App = (function() {
   
   
   /**
-   * @brief Callback for new point event.
-   */
-  App.prototype._newPoint = function() {
-    var newPoint = new Point(400, 300);
-    this._points.push(newPoint);
-    this._hashPoints();
-    
-    /*this._isNewPoint = true;
-    newPoint.hovered = true;
-    newPoint.selected = true;
-    this._hovered = newPoint;
-    this._selected = newPoint;*/
-  }
-  
-  
-  /**
    * @brief Removes all control points.
    */
   App.prototype._clearPoints = function() {
@@ -391,6 +403,7 @@ var App = (function() {
   
   
   App.prototype.run = function() {
+    this._initialize(250, 3);
     this._bindUiActions();
     this._clear();
   }
