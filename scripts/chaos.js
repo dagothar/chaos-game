@@ -52,7 +52,7 @@ var Chaos = (function() {
       x = (1.0-this._stepSize) * this._current.x + this._stepSize * target.x;
       y = (1.0-this._stepSize) * this._current.y + this._stepSize * target.y;
       
-      console.log('!');
+      //console.log('!');
     } while (!this._test(x, y));
     
     this._current = {x: x, y: y};

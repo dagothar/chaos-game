@@ -30,10 +30,6 @@
           <div class="panel-body">
             <p><strong>Dots: </strong><span class="pull-right dots"></span></p>
             <p><strong>Current dot:</strong><span class="pull-right">(<span class="text-danger point-x">0</span>, <span class="text-success point-y">0</span>)</span></p>
-
-            <div class="form-group">
-              <button type="button" class="button-add btn btn-default btn-block">Add new point <span class="glyphicon glyphicon-pushpin new-point"></span></button>
-            </div>
             
             <div class="input-group">
               <span class="input-group-btn">
@@ -41,19 +37,24 @@
               </span>
               <input type="number" class="form-control" name="ngon" min="1" val="3">
             </div>
-            
-            <br/>
+            <div class="form-group">
+              <button type="button" class="button-add btn btn-default btn-block">Add new point <span class="glyphicon glyphicon-pushpin new-point"></span></button>
+            </div>
 
             <div class="form-group">
               <button type="button" class="button-remove btn btn-default btn-block">Remove all points</button>
-              
+            </div>
+            
+            <div class="form-group">
               <!-- brush size -->
               <label>Brush size:</label> <span class="brush-size pull-right">0</span>
               <input type="range" min="1" val="5" max="20" class="parameter slider-brush"/>
-              
+            </div>
+            
+            <div class="form-group">
               <!-- paint color -->
               <label>Paint color:</label>
-              <input type="color" name="paint-color" value="#0000ff"/>
+              <input type="color" name="paint-color" value="#00ff00"/>
             </div>
             
             <div class="form-group">
@@ -82,8 +83,8 @@
             
             <!-- control buttons -->
             <div class="form-group">
-              <button type="button" class="button-start btn btn-default btn-block">Start <span class="glyphicon glyphicon-play"></span></button>
-              <button type="button" class="button-stop btn btn-default btn-block">Pause <span class="glyphicon glyphicon-pause"></span></button>
+              <button type="button" class="button-start btn btn-primary btn-block">Start <span class="glyphicon glyphicon-play"></span></button>
+              <button type="button" class="button-stop btn btn-primary btn-block">Pause <span class="glyphicon glyphicon-pause"></span></button>
               <!--button type="button" class="button-step btn btn-default btn-block">Step <span class="glyphicon glyphicon-step-forward"></span></button-->
               <button type="button" class="button-reset btn btn-default btn-block">Clear <span class="glyphicon glyphicon-erase"></span></button>
               <button type="button" class="button-download btn btn-default btn-block">Save image <span class="glyphicon glyphicon-download"></span></button>

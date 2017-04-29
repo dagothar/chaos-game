@@ -60,7 +60,7 @@ var App = (function() {
     this._dotColor      = '#000000';
     this._brushSize     = 10;
     this._painting      = false;
-    this._paintColor    = '#0000ff';
+    this._paintColor    = '#00ff00';
     this._brushSize     = 10;
     this._dotsPerStep   = 1;
     
@@ -395,9 +395,7 @@ var App = (function() {
    */
   App.prototype._testDotPosition = function(x, y) {
     var ctx = this._paintLayer.scene.context;
-    //console.log(ctx.getImageData(0, 0, 100, 100).data);
     var color = ctx.getImageData(Math.floor(2*x), Math.floor(2*y), 1, 1).data;
-    console.log(color, _.difference(color, [0, 0, 0, 0]).length == 0);
     return (_.difference(color, [0, 0, 0, 0]).length == 0) ;
   }
   
