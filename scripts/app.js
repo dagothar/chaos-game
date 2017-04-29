@@ -45,7 +45,7 @@ var App = (function() {
     this._hovered = null;
     this._selected = null;
     this._newPoint = false;
-    this._mouseUp = false;
+    this._currentPoint = new Point(400, 300);
     
     this._viewContainer = $('#view').get(0);
     this._view = new Concrete.Viewport({
@@ -123,12 +123,7 @@ var App = (function() {
       self._selected = self._hovered;
     });
     
-    $('body').mouseup(function(e) {
-      self._mouseUp = true;
-    });
-    
-    $('#view').mouseup(function(e) {
-      self._mouseUp = true;
+    $('#view').mouseup(function(e) {      
       self._selected = null;
       self._newPoint = false;
     });
@@ -186,10 +181,11 @@ var App = (function() {
     
     if (newPoint) {
       drawDot(this._gameLayer.scene.context, newPoint, this._dotSize, 'black');
-      drawDot(this._pointsLayer.scene.context, newPoint, 10, 'green');
+      this._currentPoint = newPoint;
     }
     
     this._updateUi();
+    this._updateControlPoints();
   }
   
   
@@ -255,6 +251,8 @@ var App = (function() {
       drawDot(hit.context, point, 10, hit.getColorFromKey(point.key));
       drawDot(scene.context, point, 10, point.hovered ? 'yellow' : 'red');
     });
+    
+    drawDot(scene.context, this._currentPoint, 10, 'green');
   }
   
   
