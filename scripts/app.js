@@ -60,6 +60,7 @@ var App = (function() {
     this._speed         = 10;
     this._dotSize       = 3;
     this._stepSize      = 0.5;
+    this._dotColor      = '#000000';
     
     this._game = new Chaos({x: 400, y: 300}, this._points, this._stepSize);
   };
@@ -92,6 +93,7 @@ var App = (function() {
     $('.slider-speed').val(100);
     $('.parameter-dot-size').val(this._dotSize);
     $('.slider-step').val(50);
+    $('input[name=dot-color]').val('#000000');
     
     $('.button-reset').click(function() { self._clear(); });
     $('.button-start').click(function() { self._start(); });
@@ -100,6 +102,7 @@ var App = (function() {
     $('.button-download').click(function() { self._download(); });
     $('.slider-speed').on('input change', function() { self._changeSpeed($(this).val()); });
     $('.parameter').on('input change', function() { self._updateParameters(); });
+    $('input[name=dot-color]').change(function() { self._dotColor = $(this).val(); });
     
     /* control points */
     $('#view').mousemove(_.throttle(function(e) { self._mousemove(e); }, 10));
@@ -180,7 +183,7 @@ var App = (function() {
     this._updateControlPoints();
     
     if (newPoint) {
-      drawDot(this._gameLayer.scene.context, newPoint, this._dotSize, 'black');
+      drawDot(this._gameLayer.scene.context, newPoint, this._dotSize, this._dotColor);
       this._currentPoint = newPoint;
     }
     
