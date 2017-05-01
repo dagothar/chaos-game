@@ -268,8 +268,8 @@ var App = (function() {
     this._points.forEach(function(point) {
       drawDot(hit.context, point, 10, hit.getColorFromKey(point.key));
       if (point.hovered) {
-        drawDot(scene.context, point, 12, 'black');
-        drawDot(scene.context, point, 9, 'red');
+        drawDot(scene.context, point, 15, 'black');
+        drawDot(scene.context, point, 12, 'red');
       } else {
         drawDot(scene.context, point, 10, 'red');
       }
